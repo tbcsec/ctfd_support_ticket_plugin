@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Open Support Ticket{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Open a Support Ticket</h1>
+    <p class="lead">
+      Describe your issue below and the admin team will respond as soon as possible.
+    </p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      {# Flash messages #}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      {% endwith %}
+
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <form method="POST" action="{{ url_for('support_new_ticket') }}"
+                enctype="multipart/form-data">
+
+            {# CSRF protection #}
+            <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+
+            {# ── Title ──────────────────────────────────────────────── #}
+            <div class="form-group">
+              <label for="title" class="font-weight-bold">
+                Title <span class="text-danger">*</span>
+              </label>
+              <input type="text"
+                     class="form-control"
+                     id="title"
+                     name="title"
+                     maxlength="255"
+                     placeholder="Brief summary of your issue"
+                     value="{{ form_data.get('title', '') }}"
+                     required>
+            </div>
+
+            {# ── Category ────────────────────────────────────────────── #}
+            <div class="form-group">
+              <label for="category" class="font-weight-bold">
+                Category <span class="text-danger">*</span>
+              </label>
+              <select class="form-control" id="category" name="category" required>
+                <option value="" disabled {% if not form_data.get('category') %}selected{% endif %}>
+                  — Select a category —
+                </option>
+                {% for cat in categories %}
+                <option value="{{ cat }}"
+                  {% if form_data.get('category') == cat %}selected{% endif %}>
+                  {{ cat }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            {# ── Related challenge (optional) ────────────────────────── #}
+            <div class="form-group">
+              <label for="challenge_id" class="font-weight-bold">
+                Related Challenge <span class="text-muted font-weight-normal">(optional)</span>
+              </label>
+              <select class="form-control" id="challenge_id" name="challenge_id">
+                <option value="">— Not challenge-specific —</option>
+                {% for ch in challenges %}
+                <option value="{{ ch.id }}"
+                  {% if form_data.get('challenge_id')|string == ch.id|string %}selected{% endif %}>
+                  {{ ch.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            {# ── Description ─────────────────────────────────────────── #}
+            <div class="form-group">
+              <label for="description" class="font-weight-bold">
+                Description <span class="text-danger">*</span>
+              </label>
+              <textarea class="form-control"
+                        id="description"
+                        name="description"
+                        rows="6"
+                        placeholder="Please provide as much detail as possible…"
+                        required>{{ form_data.get('description', '') }}</textarea>
+            </div>
+
+            {# ── Attachment (screenshot, images only) ────────────────── #}
+            <div class="form-group">
+              <label for="attachment" class="font-weight-bold">
+                Screenshot <span class="text-muted font-weight-normal">(optional — images only, max 5 MB)</span>
+              </label>
+              <div class="custom-file">
+                <input type="file"
+                       class="custom-file-input"
+                       id="attachment"
+                       name="attachment"
+                       accept="image/png,image/jpeg,image/gif,image/webp">
+                <label class="custom-file-label" for="attachment">Choose image…</label>
+              </div>
+              <small class="form-text text-muted">
+                Accepted formats: PNG, JPG, GIF, WEBP.
+              </small>
+
+              {# Preview pane — shown once a file is selected #}
+              <div id="attachment-preview" class="mt-2" style="display:none;">
+                <img id="attachment-preview-img"
+                     src=""
+                     alt="Preview"
+                     class="img-thumbnail"
+                     style="max-height: 200px;">
+              </div>
+            </div>
+
+            {# ── Submit ──────────────────────────────────────────────── #}
+            <div class="d-flex justify-content-between align-items-center mt-4">
+              <a href="{{ url_for('support_ticket_list') }}" class="btn btn-outline-secondary">
+                &larr; Cancel
+              </a>
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="fas fa-paper-plane mr-1"></i> Submit Ticket
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  // Update the custom file input label and show a preview.
+  document.getElementById("attachment").addEventListener("change", function () {
+    const file = this.files[0];
+    const label = this.nextElementSibling;
+    const preview = document.getElementById("attachment-preview");
+    const previewImg = document.getElementById("attachment-preview-img");
+
+    if (file) {
+      label.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        previewImg.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    } else {
+      label.textContent = "Choose image…";
+      preview.style.display = "none";
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket #{{ ticket.id }} — {{ ticket.title }}{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1 class="mb-1">{{ ticket.title }}</h1>
+    <p class="lead mb-0">
+      {% set status_label, status_colour = statuses.get(ticket.status, (ticket.status, 'secondary')) %}
+      <span class="badge bg-{{ status_colour }} text-white" style="font-size:0.85rem;">
+        {{ status_label }}
+      </span>
+    </p>
+  </div>
+</div>
+
+<div class="container">
+
+  {# Flash messages #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="row">
+    {# ── Main column — ticket body + replies ─────────────────────────────── #}
+    <div class="col-lg-8">
+
+      {# Original ticket #}
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ submitter.name if submitter else 'Unknown user' }}</strong>
+            <span class="text-muted small ml-2">
+              {{ ticket.created_at.strftime('%d %b %Y, %H:%M') }} UTC
+            </span>
+          </div>
+          <span class="badge bg-light text-dark">Original Message</span>
+        </div>
+        <div class="card-body">
+          <p style="white-space: pre-wrap;">{{ ticket.description }}</p>
+
+          {# Attachment #}
+          {% if ticket.attachments %}
+            {% for att in ticket.attachments %}
+            <div class="mt-3">
+              <p class="text-muted small mb-1">
+                <i class="fas fa-image mr-1"></i> Screenshot attached:
+              </p>
+              <a href="{{ url_for('support_get_attachment', attachment_id=att.id) }}"
+                 target="_blank">
+                <img src="{{ url_for('support_get_attachment', attachment_id=att.id) }}"
+                     alt="{{ att.filename }}"
+                     class="img-thumbnail"
+                     style="max-height:250px; cursor:zoom-in;">
+              </a>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      {# Admin replies #}
+      {% for reply in ticket.replies %}
+      <div class="card shadow-sm mb-3 border-left-primary" style="border-left: 4px solid #007bff !important;">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <div>
+            <i class="fas fa-shield-alt text-primary mr-1"></i>
+            <strong>Admin Team</strong>
+            <span class="text-muted small ml-2">
+              {{ reply.created_at.strftime('%d %b %Y, %H:%M') }} UTC
+            </span>
+          </div>
+          <span class="badge bg-primary text-white">Admin Response</span>
+        </div>
+        <div class="card-body">
+          <p style="white-space: pre-wrap;">{{ reply.content }}</p>
+        </div>
+      </div>
+      {% endfor %}
+
+      {# Close button (only when not already closed) #}
+      {% if ticket.status != 'closed' %}
+      <div class="mt-3 mb-5">
+        <form method="POST"
+              action="{{ url_for('support_close_ticket', ticket_id=ticket.id) }}"
+              onsubmit="return confirm('Are you sure you want to close this ticket?');">
+          <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+          <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-times-circle mr-1"></i> Mark as Resolved &amp; Close
+          </button>
+        </form>
+      </div>
+      {% else %}
+      <p class="text-muted mt-3">
+        <i class="fas fa-check-circle mr-1"></i> This ticket is closed.
+        If you need further help, please
+        <a href="{{ url_for('support_new_ticket') }}">open a new ticket</a>.
+      </p>
+      {% endif %}
+
+    </div>
+
+    {# ── Sidebar — ticket metadata ────────────────────────────────────────── #}
+    <div class="col-lg-4">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header font-weight-bold">Ticket Details</div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Status</span>
+            <span class="badge bg-{{ status_colour }} text-white">{{ status_label }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Category</span>
+            <span>{{ ticket.category }}</span>
+          </li>
+          {% if challenge %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Challenge</span>
+            <span>{{ challenge.name }}</span>
+          </li>
+          {% endif %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Opened</span>
+            <span>{{ ticket.created_at.strftime('%d %b %Y') }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Last Updated</span>
+            <span>{{ ticket.updated_at.strftime('%d %b %Y') }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">Replies</span>
+            <span>{{ ticket.replies | length }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <a href="{{ url_for('support_ticket_list') }}" class="btn btn-block btn-outline-secondary btn-sm">
+        &larr; Back to My Tickets
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

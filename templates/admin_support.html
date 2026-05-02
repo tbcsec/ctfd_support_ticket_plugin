@@ -1,0 +1,199 @@
+{% extends "admin/base.html" %}
+
+{% block stylesheets %}
+  {{ Assets.css("assets/css/challenge-board.scss", theme="admin") }}
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Support</h1> 
+  </div>
+</div>
+
+
+<div class="mb-4">
+    <span class="badge badge-danger">Unanswered: {{ summary_counts['Unanswered'] }}</span>
+    <span class="badge badge-warning">Answered: {{ summary_counts['Answered'] }}</span>
+    <span class="badge badge-success">Resolved: {{ summary_counts['Resolved'] }}</span>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" id="ticketTabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="unanswered-tab" data-toggle="tab" href="#unanswered" role="tab">Unanswered</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="answered-tab" data-toggle="tab" href="#answered" role="tab">Answered</a>
+  </li>
+</ul>
+
+<!-- Tab Contents -->
+<div class="tab-content" id="ticketTabsContent">
+
+  <!-- Unanswered Tab -->
+  <div class="tab-pane fade show active" id="unanswered" role="tabpanel">
+    <div class="row">
+      <div class="col-md-12 table-responsive">
+        <table class="table table-striped border">
+          <thead>
+            <tr>
+              <th class="sort-col text-center"><b>ID</b></th>
+              <th class="sort-col"><b>User</b></th>
+              <th class="sort-col"><b>Category</b></th>
+              <th class="text-center"><b>Description</b></th>
+              <th class="sort-col text-center"><b>Status</b></th>
+              <th class="sort-col text-center"><b>Created</b></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ticket in unanswered %}
+              <tr class="ticket-row"
+                data-id="{{ ticket.id }}"
+                data-status="{{ ticket.status }}"
+                data-description="{{ ticket.description | e }}"
+                data-username="{{ ticket.username }}"
+                data-toggle="modal"
+                data-target="#ticketModal">
+                <td class="text-center">{{ ticket.id }}</td>
+                <td>{{ ticket.username }}</td>
+                <td>{{ ticket.category }}</td>
+                <td>{{ ticket.description | truncate(50, True, '...') }}</td>
+                <td class="text-center">{{ ticket.status }}</td>
+                <td class="text-center">{{ ticket.created.strftime('%b %d, %Y %H:%M') }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="text-center">No unanswered tickets.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Answered Tab -->
+  <div class="tab-pane fade" id="answered" role="tabpanel">
+    <div class="row">
+      <div class="col-md-12 table-responsive">
+        <table class="table table-striped border">
+          <thead>
+            <tr>
+              <th class="sort-col text-center"><b>ID</b></th>
+              <th class="sort-col"><b>User</b></th>
+              <th class="sort-col"><b>Category</b></th>
+              <th class="text-center"><b>Description</b></th>
+              <th class="sort-col text-center"><b>Status</b></th>
+              <th class="sort-col text-center"><b>Created</b></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ticket in answered %}
+              <tr class="ticket-row">
+                <td class="text-center">{{ ticket.id }}</td>
+                <td>{{ ticket.username }}</td>
+                <td>{{ ticket.category }}</td>
+                <td>{{ ticket.description | truncate(75, True, '...') }}</td>
+                <td class="text-center">{{ ticket.status }}</td>
+                <td class="text-center">{{ ticket.created.strftime('%b %d, %Y %H:%M') }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="text-center">No answered tickets.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--unanswered tickets modal-->
+<div class="modal fade" id="ticketModal" tabindex="-1" role="dialog" aria-labelledby="ticketModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="ticketResponseForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ticketModalLabel">Respond to Ticket</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="ticketId" name="ticket_id">
+          <div class="form-group">
+            <label for="ticketUsername">Username:</label>
+            <p id="ticketUsername" class="border p-2 rounded bg-light" style="white-space: pre-wrap;"></p>
+          </div>
+          <div class="form-group">
+            <label for="ticketDescription">Ticket Description:</label>
+            <p id="ticketDescription" class="border p-2 rounded bg-light" style="white-space: pre-wrap;"></p>
+          </div>
+          <div class="form-group">
+            <label for="ticketResponse">Response:</label>
+            <textarea class="form-control" id="ticketResponse" name="response" rows="4"></textarea>
+          </div>
+          <div class="form-group form-check">
+            <input type="checkbox" class="form-check-input" id="resolvedCheckbox" name="resolved">
+            <label class="form-check-label" for="resolvedCheckbox">Mark Ticket as Resolved</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Send Response</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add click event listeners to each ticket row
+document.querySelectorAll(".ticket-row").forEach(row => {
+  row.addEventListener("click", function() {
+    const id = this.dataset.id;
+    const status = this.dataset.status;
+    const description = this.dataset.description;
+    const username = this.dataset.username;
+    console.log("Username:", username);
+    console.log("Description:", description);
+    
+    // populate modal fields
+    document.getElementById("ticketId").value = id;
+    document.getElementById("ticketDescription").textContent = description;
+    document.getElementById("ticketUsername").textContent = username;
+
+    // reset response form
+    document.getElementById("ticketResponse").value = "";
+    document.getElementById("resolvedCheckbox").checked = (status === "Resolved");
+  });
+});
+
+// Add a single event listener for form submission outside the forEach loop
+document.getElementById("ticketResponseForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  if (!confirm("Are you sure you want to submit this response?")) {
+    return;
+  }
+
+  const formData = new FormData(this);
+  fetch("/admin/support", {
+    method: "POST",
+    body: formData,
+  }).then(response => {
+    if (response.status === 409) {
+      alert("This ticket has already been answered by another judge.");
+    } else if (response.ok) {
+      location.reload();
+    } else {
+      alert("Failed to send response.");
+    }
+  });
+});
+</script>
+{% endblock %}

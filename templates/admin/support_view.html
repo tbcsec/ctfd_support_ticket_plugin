@@ -1,0 +1,254 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Ticket #{{ ticket.id }} — Admin Support{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb bg-transparent p-0 mb-2">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('admin_support_list') }}">Support Tickets</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+          Ticket #{{ ticket.id }}
+        </li>
+      </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h1 class="mb-1">{{ ticket.title }}</h1>
+        <p class="lead mb-0">
+          {% set status_label, status_colour = statuses.get(ticket.status, (ticket.status, 'secondary')) %}
+          <span class="badge badge-{{ status_colour }} badge-pill" style="font-size:0.85rem;">
+            {{ status_label }}
+          </span>
+          <span class="text-muted ml-2">
+            Opened {{ ticket.created_at.strftime('%d %b %Y, %H:%M') }} UTC
+          </span>
+        </p>
+      </div>
+      {# Quick close button in the header #}
+      {% if ticket.status != 'closed' %}
+      <form method="POST" action="{{ url_for('admin_support_close', ticket_id=ticket.id) }}"
+            onsubmit="return confirm('Close this ticket?');"
+            class="ml-3 flex-shrink-0">
+        <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+        <button type="submit" class="btn btn-danger">
+          <i class="fas fa-times-circle mr-1"></i> Close Ticket
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  {# Flash messages #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="row">
+
+    {# ── Main column: original ticket + replies + reply form ──────────────── #}
+    <div class="col-lg-8">
+
+      {# Original submission #}
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <i class="fas fa-user mr-1"></i>
+            <strong>{{ submitter.name if submitter else 'Deleted User' }}</strong>
+            {% if submitter %}
+            <a href="/admin/users/{{ submitter.id }}"
+               class="text-muted small ml-1">(User #{{ submitter.id }})</a>
+            {% endif %}
+            <span class="text-muted small ml-2">
+              {{ ticket.created_at.strftime('%d %b %Y, %H:%M') }} UTC
+            </span>
+          </div>
+          <span class="badge badge-light">Original Message</span>
+        </div>
+        <div class="card-body">
+          <p style="white-space: pre-wrap;">{{ ticket.description }}</p>
+
+          {# Attachment #}
+          {% if ticket.attachments %}
+            {% for att in ticket.attachments %}
+            <div class="mt-3">
+              <p class="text-muted small mb-1">
+                <i class="fas fa-image mr-1"></i> Screenshot: <em>{{ att.filename }}</em>
+              </p>
+              <a href="{{ url_for('support_get_attachment', attachment_id=att.id) }}"
+                 target="_blank">
+                <img src="{{ url_for('support_get_attachment', attachment_id=att.id) }}"
+                     alt="{{ att.filename }}"
+                     class="img-thumbnail"
+                     style="max-height:300px; cursor:zoom-in;">
+              </a>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      {# Admin replies #}
+      {% for reply in ticket.replies %}
+      <div class="card shadow-sm mb-3" style="border-left: 4px solid #28a745;">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <div>
+            <i class="fas fa-shield-alt text-success mr-1"></i>
+            <strong>Admin Response</strong>
+            <span class="text-muted small ml-2">
+              by Admin #{{ reply.admin_id }} &mdash;
+              {{ reply.created_at.strftime('%d %b %Y, %H:%M') }} UTC
+            </span>
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="white-space: pre-wrap;">{{ reply.content }}</p>
+        </div>
+      </div>
+      {% endfor %}
+
+      {# ── Reply form (hidden when ticket is closed) ────────────────────── #}
+      {% if ticket.status != 'closed' %}
+      <div class="card shadow-sm mt-4">
+        <div class="card-header font-weight-bold">
+          <i class="fas fa-reply mr-1"></i> Post a Reply
+        </div>
+        <div class="card-body">
+          <form method="POST"
+                action="{{ url_for('admin_support_reply', ticket_id=ticket.id) }}">
+            <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+            <div class="form-group mb-3">
+              <textarea class="form-control"
+                        name="content"
+                        id="reply-content"
+                        rows="5"
+                        placeholder="Type your response to the participant here…"
+                        required></textarea>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                Sending a reply will change the ticket status to
+                <strong>Awaiting User Response</strong>.
+              </small>
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-paper-plane mr-1"></i> Send Reply
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert alert-secondary mt-4">
+        <i class="fas fa-lock mr-1"></i>
+        This ticket is <strong>closed</strong> and no further replies can be sent.
+      </div>
+      {% endif %}
+
+    </div>
+
+    {# ── Sidebar: ticket metadata ────────────────────────────────────────── #}
+    <div class="col-lg-4">
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-header font-weight-bold">Ticket Details</div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <small class="text-muted d-block">Status</small>
+            <span class="badge badge-{{ status_colour }}">{{ status_label }}</span>
+          </li>
+          <li class="list-group-item">
+            <small class="text-muted d-block">Category</small>
+            {{ ticket.category }}
+          </li>
+          {% if challenge %}
+          <li class="list-group-item">
+            <small class="text-muted d-block">Related Challenge</small>
+            <a href="/admin/challenges/{{ challenge.id }}">{{ challenge.name }}</a>
+          </li>
+          {% else %}
+          <li class="list-group-item">
+            <small class="text-muted d-block">Related Challenge</small>
+            <span class="text-muted">None specified</span>
+          </li>
+          {% endif %}
+          <li class="list-group-item">
+            <small class="text-muted d-block">Submitted By</small>
+            {% if submitter %}
+            <a href="/admin/users/{{ submitter.id }}">{{ submitter.name }}</a>
+            (User #{{ submitter.id }})
+            {% else %}
+            <span class="text-muted">Deleted user</span>
+            {% endif %}
+          </li>
+          {% if ticket.team_id %}
+          <li class="list-group-item">
+            <small class="text-muted d-block">Team</small>
+            <a href="/admin/teams/{{ ticket.team_id }}">Team #{{ ticket.team_id }}</a>
+          </li>
+          {% endif %}
+          <li class="list-group-item">
+            <small class="text-muted d-block">Opened</small>
+            {{ ticket.created_at.strftime('%d %b %Y, %H:%M') }} UTC
+          </li>
+          <li class="list-group-item">
+            <small class="text-muted d-block">Last Updated</small>
+            {{ ticket.updated_at.strftime('%d %b %Y, %H:%M') }} UTC
+          </li>
+          <li class="list-group-item">
+            <small class="text-muted d-block">Replies</small>
+            {{ ticket.replies | length }}
+          </li>
+          <li class="list-group-item">
+            <small class="text-muted d-block">Attachment</small>
+            {% if ticket.attachments %}
+            <i class="fas fa-image text-success mr-1"></i> Yes ({{ ticket.attachments | length }})
+            {% else %}
+            <span class="text-muted">None</span>
+            {% endif %}
+          </li>
+        </ul>
+      </div>
+
+      {# Close / export actions #}
+      <div class="card shadow-sm mb-3">
+        <div class="card-header font-weight-bold">Actions</div>
+        <div class="card-body">
+          {% if ticket.status != 'closed' %}
+          <form method="POST"
+                action="{{ url_for('admin_support_close', ticket_id=ticket.id) }}"
+                onsubmit="return confirm('Close this ticket?');"
+                class="mb-2">
+            <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+            <button type="submit" class="btn btn-block btn-danger btn-sm">
+              <i class="fas fa-times-circle mr-1"></i> Close Ticket
+            </button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('admin_support_export') }}"
+             class="btn btn-block btn-outline-secondary btn-sm">
+            <i class="fas fa-download mr-1"></i> Export All Tickets (CSV)
+          </a>
+          <a href="{{ url_for('admin_support_list') }}"
+             class="btn btn-block btn-outline-secondary btn-sm mt-2">
+            &larr; Back to All Tickets
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
