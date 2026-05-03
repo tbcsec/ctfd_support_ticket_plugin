@@ -164,14 +164,14 @@ There is no admin configuration UI at this time. The following constants can be 
 ---
 
 ## Screenshots
+
+<img width="843" height="845" alt="Screenshot from 2026-05-03 19-44-25" src="https://github.com/user-attachments/assets/2f22e9ee-71c3-462f-92ee-8f3d68da8933" /><br><br>
  
-<img width="843" height="845" alt="Screenshot from 2026-05-03 19-44-25" src="https://github.com/user-attachments/assets/2f22e9ee-71c3-462f-92ee-8f3d68da8933" />
+<img width="1196" height="658" alt="Screenshot from 2026-05-03 19-48-09" src="https://github.com/user-attachments/assets/41ff41d5-43d4-4470-a82e-d09019ded472" /><br><br>
  
-<img width="1196" height="658" alt="Screenshot from 2026-05-03 19-48-09" src="https://github.com/user-attachments/assets/41ff41d5-43d4-4470-a82e-d09019ded472" />
+<img width="1196" height="410" alt="Screenshot from 2026-05-03 19-49-56" src="https://github.com/user-attachments/assets/27b0f63b-d6be-447e-8b77-b698f72799e9" /><br><br>
  
-<img width="1196" height="410" alt="Screenshot from 2026-05-03 19-49-56" src="https://github.com/user-attachments/assets/27b0f63b-d6be-447e-8b77-b698f72799e9" />
- 
-<img width="943" height="861" alt="Screenshot from 2026-05-03 19-50-41" src="https://github.com/user-attachments/assets/a56eb808-6851-4e61-83ee-666552122e66" />
+<img width="943" height="861" alt="Screenshot from 2026-05-03 19-50-41" src="https://github.com/user-attachments/assets/a56eb808-6851-4e61-83ee-666552122e66" /><br><br>
  
 ---
 
