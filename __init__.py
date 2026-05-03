@@ -231,7 +231,7 @@ def load(app):
                     content=(
                         f'A new support ticket has been submitted: '
                         f'"{title}" (Category: {category}). '
-                        f'View it in the admin panel under Plugins → Support Tickets.'
+                        f'View it in the admin panel under Support Tickets.'
                     ),
                 )
                 db.session.add(notif)
