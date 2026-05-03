@@ -363,6 +363,9 @@ def load(app):
         current_user = get_current_user()
         ticket  = SupportTicket.query.get_or_404(ticket_id)
         content = request.form.get("content", "").strip()
+        existing_reply = SupportTicketReply.query.filter_by(
+            ticket_id=ticket.id,
+        ).count()
 
         if not content:
             flash("Reply content cannot be empty.", "danger")
@@ -373,6 +376,11 @@ def load(app):
                 "This ticket is closed. Re-open it before replying.",
                 "warning",
             )
+            return redirect(url_for("admin_support_view", ticket_id=ticket_id))
+        
+        # limit replies to 10 per ticket
+        if existing_reply >= 10:
+            flash("This ticket has reached the maximum number of replies.", "warning")
             return redirect(url_for("admin_support_view", ticket_id=ticket_id))
 
         reply = SupportTicketReply(
