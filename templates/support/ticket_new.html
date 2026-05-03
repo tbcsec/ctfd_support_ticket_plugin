@@ -52,7 +52,7 @@
             </div>
 
             {# ── Category ────────────────────────────────────────────── #}
-            <div class="form-group">
+            <div class="form-group  mt-3" style="padding-top: 1px;">
               <label for="category" class="font-weight-bold">
                 Category <span class="text-danger">*</span>
               </label>
@@ -70,7 +70,7 @@
             </div>
 
             {# ── Related challenge (optional) ────────────────────────── #}
-            <div class="form-group">
+            <div class="form-group  mt-3" style="padding-top: 1px;">
               <label for="challenge_id" class="font-weight-bold">
                 Related Challenge <span class="text-muted font-weight-normal">(optional)</span>
               </label>
@@ -86,7 +86,7 @@
             </div>
 
             {# ── Description ─────────────────────────────────────────── #}
-            <div class="form-group">
+            <div class="form-group  mt-3" style="padding-top: 1px;">
               <label for="description" class="font-weight-bold">
                 Description <span class="text-danger">*</span>
               </label>
@@ -99,21 +99,23 @@
             </div>
 
             {# ── Attachment (screenshot, images only) ────────────────── #}
-            <div class="form-group">
+            <div class="form-group  mt-3" style="padding-top: 1px;">
               <label for="attachment" class="font-weight-bold">
                 Screenshot <span class="text-muted font-weight-normal">(optional — images only, max 5 MB)</span>
               </label>
+              <div>
+                <small class="form-text text-muted">
+                  Accepted formats: PNG, JPG, GIF, WEBP.
+                </small>
+              </div>
               <div class="custom-file">
                 <input type="file"
                        class="custom-file-input"
                        id="attachment"
                        name="attachment"
                        accept="image/png,image/jpeg,image/gif,image/webp">
-                <label class="custom-file-label" for="attachment">Choose image…</label>
               </div>
-              <small class="form-text text-muted">
-                Accepted formats: PNG, JPG, GIF, WEBP.
-              </small>
+
 
               {# Preview pane — shown once a file is selected #}
               <div id="attachment-preview" class="mt-2" style="display:none;">
